@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프론트 전시 현황판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --text:#1b1d22; --muted:#6b7280; --line:#e5e7eb;
+  --accent:#e4002b; --done:#16a34a; --prog:#2563eb; --todo:#9ca3af; --risk:#dc2626; --warn:#f59e0b;
+  --chip:#f1f3f6; --overlay:rgba(0,0,0,.45);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --card:#181b21; --text:#e8eaed; --muted:#9aa1ad; --line:#2a2f38; --chip:#222730; --overlay:rgba(0,0,0,.65);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --card:#181b21; --text:#e8eaed; --muted:#9aa1ad; --line:#2a2f38; --chip:#222730; --overlay:rgba(0,0,0,.65);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:14px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{font-size:22px;margin:0;font-weight:700}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:12px;margin-top:4px}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select,input,textarea{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);
+  border-radius:8px;padding:7px 12px}
+button{cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.ghost{background:transparent}
+button.danger{color:var(--risk);border-color:var(--risk);background:transparent}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h2{font-size:15px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 small{color:var(--muted);font-weight:400;font-size:12px}
+.empty{color:var(--muted);padding:14px 0;text-align:center}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:12px;flex-wrap:wrap}
+.legend em{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day{border:1px solid var(--line);border-radius:10px;padding:8px;min-height:160px;min-width:0}
+.day.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.day .dh{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+.day .dh b{color:var(--text)}
+.day .add{opacity:0;border:0;padding:0 4px;font-size:14px;color:var(--muted);background:none}
+.day:hover .add{opacity:1}
+.ev{font-size:12px;border-radius:6px;padding:4px 6px;margin-bottom:4px;background:var(--chip);cursor:pointer;
+  border-left:3px solid var(--todo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev.done{border-left-color:var(--done)} .ev.prog{border-left-color:var(--prog)}
+.weeknav{display:flex;gap:6px}
+.weeknav button{padding:4px 10px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filters input{flex:1;min-width:160px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:920px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;cursor:pointer;user-select:none}
+td.nowrap{white-space:nowrap}
+tbody tr:hover{background:var(--chip)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge.done{background:rgba(22,163,74,.12);color:var(--done)}
+.badge.prog{background:rgba(37,99,235,.12);color:var(--prog)}
+.badge.todo{background:var(--chip);color:var(--muted)}
+select.st{padding:3px 6px;font-size:12px;border-radius:999px}
+.links a{color:var(--prog);text-decoration:none;margin-right:6px;font-size:12px}
+.links a:hover{text-decoration:underline}
+.edit-btn{padding:3px 9px;font-size:12px}
+.msg{border-radius:10px;padding:12px 14px;margin-bottom:16px;display:none}
+.msg.err{background:rgba(220,38,38,.1);color:var(--risk)}
+.msg.info{background:rgba(37,99,235,.1);color:var(--prog)}
+/* 모달 */
+.modal{position:fixed;inset:0;background:var(--overlay);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.open{display:flex}
+.sheet{background:var(--card);border-radius:14px;width:100%;max-width:640px;max-height:92vh;overflow:auto;padding:20px}
+.sheet h3{margin:0 0 14px;font-size:17px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}
+.form label.full{grid-column:1/-1}
+.form input,.form select,.form textarea{width:100%;color:var(--text)}
+.form .req::after{content:" *";color:var(--accent)}
+.sheet .foot{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
+.sheet .foot div{display:flex;gap:8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;
+  border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1}
+@media (max-width:980px){
+  .week{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:560px){ .form{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span>T deal</span> 프론트 전시 현황판</h1>
+      <div class="sub" id="updated">불러오는 중…</div>
+    </div>
+    <div class="actions">
+      <label style="font-size:12px;color:var(--muted)">
+        <input type="checkbox" id="showExample" style="padding:0;vertical-align:-2px"> 예시 행 포함
+      </label>
+      <button id="themeBtn" class="ghost" title="테마 전환">🌓</button>
+      <button id="refreshBtn">새로고침</button>
+      <button class="primary" id="addBtn">+ 구좌 추가</button>
+    </div>
+  </header>
+
+  <div class="msg err" id="err"></div>
+  <div class="msg info" id="info"></div>
+
+  <section class="card" style="margin-bottom:16px">
+    <h2>
+      <span>주간 전시 캘린더 <small id="weekLabel"></small></span>
+      <span class="weeknav">
+        <button id="prevW">◀</button><button id="thisW">이번 주</button><button id="nextW">▶</button>
+      </span>
+    </h2>
+    <div class="week" id="week"></div>
+    <div class="legend">
+      <span><em style="background:var(--done)"></em>완료</span>
+      <span><em style="background:var(--prog)"></em>진행 중</span>
+      <span><em style="background:var(--todo)"></em>미요청</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>전체 현황 <small id="tblCount"></small></h2>
+    <div class="filters">
+      <input id="q" placeholder="구좌명·노출 영역·요청자 검색">
+      <select id="fType"><option value="">구좌 구분 전체</option></select>
+      <select id="fStatus">
+        <option value="">상태 전체</option>
+        <option value="done">완료</option>
+        <option value="prog">진행 중</option>
+        <option value="todo">미요청</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th data-k="date">전시일자 ↕</th><th data-k="type">구좌 구분</th><th data-k="name">구좌명</th>
+          <th>노출 영역</th><th data-k="req">요청일</th><th data-k="fin">완료일</th>
+          <th data-k="owner">요청자</th><th data-k="status">준비 여부</th><th>경로</th><th>참고</th><th></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- 입력/수정 모달 -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h3 id="mTitle">구좌 추가</h3>
+    <form class="form" id="form" autocomplete="off">
+      <label><span class="req">전시일자</span><input type="date" name="date" required></label>
+      <label><span class="req">구좌 구분</span><input name="type" list="typeList" required placeholder="예: 특가, 기획전, 이벤트"></label>
+      <label class="full">구좌명<input name="name" placeholder="예: META WEEK"></label>
+      <label class="full">노출 영역<input name="area" list="areaList" placeholder="예: 이벤트페이지, 메인(홈), 딜상세배너"></label>
+      <label>제작 요청일<input type="date" name="req"></label>
+      <label>제작 완료일<input type="date" name="fin"></label>
+      <label>요청자<input name="owner" list="ownerList"></label>
+      <label>준비 여부
+        <select name="ready">
+          <option value="">(비움)</option>
+          <option>진행중</option>
+          <option>완료</option>
+        </select>
+      </label>
+      <label class="full">기획안(경로)<input name="plan" placeholder="URL 또는 경로"></label>
+      <label class="full">제작 완료(경로)<input name="made" placeholder="URL 또는 경로"></label>
+      <label class="full">제작 본(경로)<input name="final" placeholder="URL 또는 경로"></label>
+      <label class="full">참고<textarea name="note" rows="2"></textarea></label>
+    </form>
+    <div class="foot">
+      <button class="danger" id="delBtn" type="button">내용 삭제</button>
+      <div>
+        <button type="button" id="cancelBtn">취소</button>
+        <button class="primary" type="button" id="saveBtn">시트에 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+<datalist id="typeList"></datalist><datalist id="areaList"></datalist><datalist id="ownerList"></datalist>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 설정: Apps Script 배포 후 웹 앱 URL을 붙여넣으세요 ===== */
+const SCRIPT_URL = "";   // 예: "https://script.google.com/macros/s/XXXX/exec"
+const SHEET_ID   = "1LiWfxAQ8V7rRxO-ZZKDXjDLpzFuBOb0pQA1MNJYwUKg";
+const GID        = "1910747964";   // 시트5 (SCRIPT_URL 없을 때 읽기 전용용)
+const AUTO_REFRESH_MIN = 5;        // 자동 새로고침(분), 0이면 끔
+/* ============================================================ */
+
+const params = new URLSearchParams(location.search);
+const scriptUrl = params.get("api") || SCRIPT_URL;
+const canWrite = !!scriptUrl;
+
+let ROWS = [], weekOffset = 0, sortKey = "date", sortAsc = true, editing = null, busy = false;
+const DOW = ["일","월","화","수","목","금","토"];
+const FIELDS = ["date","type","name","area","req","fin","owner","plan","made","final","ready","note"];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clean = s => String(s ?? "").replace(/[\u200B-\u200D\uFEFF]/g,"").trim();
+
+function today0(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+const iso = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}` : "";
+
+/* 날짜 파싱: "2026-10-15" / gviz Date(y,m,d) / "10월 15 목요일" / "10/15" */
+function parseDate(s){
+  s = clean(s); if(!s) return null;
+  let m = s.match(/^Date\((\d+),(\d+),(\d+)/);
+  if(m) return new Date(+m[1], +m[2], +m[3]);
+  m = s.match(/(\d{4})[.\-\/년\s]+(\d{1,2})[.\-\/월\s]+(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  m = s.match(/(\d{1,2})\s*[월.\/-]\s*(\d{1,2})/);
+  if(m){
+    const t = today0(), d = new Date(t.getFullYear(), +m[1]-1, +m[2]);
+    if(d - t > 183*86400000) d.setFullYear(d.getFullYear()-1);
+    else if(t - d > 183*86400000) d.setFullYear(d.getFullYear()+1);
+    return d;
+  }
+  return null;
+}
+const fmt = d => d ? `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})` : "-";
+const dday = d => d ? Math.round((d - today0())/86400000) : null;
+
+function statusOf(r){
+  if(/완료|done/i.test(r.ready) || /^o$/i.test(r.ready)) return "done";
+  if(r.ready || r.reqD) return "prog";
+  return "todo";
+}
+const ST_LABEL = {done:"완료", prog:"진행 중", todo:"미요청"};
+
+function enrich(r){
+  r.date = parseDate(r.dateRaw); r.reqD = parseDate(r.reqRaw); r.finD = parseDate(r.finRaw);
+  r.status = statusOf(r);
+  return r;
+}
+
+/* ---------- 읽기 ---------- */
+async function loadFromScript(){
+  const res = await fetch(`${scriptUrl}?_=${Date.now()}`);
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error);
+  return j.rows.map(x => enrich({
+    row:x.row, label:clean(x.label), dateRaw:x.date, type:clean(x.type), name:clean(x.name), area:clean(x.area),
+    reqRaw:x.req, finRaw:x.fin, owner:clean(x.owner), plan:clean(x.plan), made:clean(x.made),
+    final:clean(x.final), ready:clean(x.ready), note:clean(x.note)
+  }));
+}
+
+async function loadFromGviz(){
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&gid=${GID}&_=${Date.now()}`;
+  const raw = await (await fetch(url)).text();
+  const m = raw.match(/setResponse\(([\s\S]*)\);?\s*$/);
+  if(!m) throw new Error("시트가 '링크가 있는 모든 사용자' 보기 권한인지 확인해 주세요.");
+  const json = JSON.parse(m[1]);
+  const labels = json.table.cols.map(c => clean(c.label).replace(/\s/g,""));
+  const find = (n, fb) => { const i = labels.findIndex(l => l.startsWith(n)); return i>=0 ? i : fb; };
+  const ix = {date:find("전시일자",1),type:find("구좌구분",2),name:find("구좌명",3),area:find("노출영역",4),
+    req:find("제작요청일",5),fin:find("제작완료일",6),owner:find("요청자",7),plan:find("기획안",8),
+    made:find("제작완료(",9),final:find("제작본",10),ready:find("준비여부",11),note:find("참고",12)};
+  const cell = c => c ? clean(c.f ?? c.v ?? "") : "";
+  const dcell = c => c ? (typeof c.v==="string" && c.v.startsWith("Date(") ? c.v : cell(c)) : "";
+  return json.table.rows.map(row => { const c = row.c || []; return enrich({
+    row:null, label:cell(c[0]), dateRaw:dcell(c[ix.date]), type:cell(c[ix.type]), name:cell(c[ix.name]),
+    area:cell(c[ix.area]), reqRaw:dcell(c[ix.req]), finRaw:dcell(c[ix.fin]), owner:cell(c[ix.owner]),
+    plan:cell(c[ix.plan]), made:cell(c[ix.made]), final:cell(c[ix.final]), ready:cell(c[ix.ready]), note:cell(c[ix.note])
+  }); }).filter(r => r.type || r.name || r.dateRaw);
+}
+
+async function load(){
+  if(busy) return;
+  $("err").style.display="none";
+  $("updated").textContent = "불러오는 중…";
+  try{
+    ROWS = canWrite ? await loadFromScript() : await loadFromGviz();
+    const now = new Date();
+    $("updated").textContent = `시트5 기준 · 마지막 갱신 ${now.toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}` + (canWrite ? "" : " · 읽기 전용");
+    fillLists();
+    render();
+  }catch(e){
+    showErr("데이터를 불러오지 못했어요: " + e.message);
+    $("updated").textContent = "불러오기 실패";
+  }
+}
+
+/* ---------- 쓰기 ---------- */
+function getPassword(force){
+  let pw = null;
+  try{ pw = force ? null : localStorage.getItem("dash_pw"); }catch(e){}
+  if(!pw){
+    pw = prompt("입력용 비밀번호를 입력해 주세요 (이 브라우저에 저장돼요)");
+    if(!pw) return null;
+    try{ localStorage.setItem("dash_pw", pw); }catch(e){}
+  }
+  return pw;
+}
+
+async function post(action, payload, retry=true){
+  const password = getPassword(false);
+  if(!password) throw new Error("비밀번호 입력이 취소됐어요.");
+  const res = await fetch(scriptUrl, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},   // CORS 사전요청 회피
+    body: JSON.stringify({action, password, ...payload})
+  });
+  const j = await res.json();
+  if(!j.ok){
+    if(/비밀번호/.test(j.error) && retry){
+      try{ localStorage.removeItem("dash_pw"); }catch(e){}
+      if(getPassword(true)) return post(action, payload, false);
+    }
+    throw new Error(j.error);
+  }
+  return j;
+}
+
+function openModal(r, presetDate){
+  if(!canWrite){ showInfo(); return; }
+  editing = r || null;
+  $("mTitle").textContent = r ? "구좌 수정" : "구좌 추가";
+  $("delBtn").style.display = r ? "" : "none";
+  const f = $("form"); f.reset();
+  if(r){
+    f.date.value = iso(r.date); f.req.value = iso(r.reqD); f.fin.value = iso(r.finD);
+    ["type","name","area","owner","plan","made","final","note"].forEach(k => f[k].value = r[k] || "");
+    const sel = f.ready;
+    if(r.ready && ![...sel.options].some(o => o.value===r.ready)) sel.add(new Option(r.ready, r.ready));
+    sel.value = r.ready || "";
+  }else if(presetDate){
+    f.date.value = iso(presetDate);
+  }
+  $("modal").classList.add("open");
+  setTimeout(() => (r ? f.name : f.date).focus(), 50);
+}
+function closeModal(){ $("modal").classList.remove("open"); editing = null; }
+
+async function save(){
+  const f = $("form");
+  if(!f.reportValidity()) return;
+  const data = {};
+  FIELDS.forEach(k => data[k] = f[k].value.trim());
+  // 완료일 입력했는데 준비 여부 비어 있으면 '완료'로
+  if(data.fin && !data.ready) data.ready = "완료";
+  setBusy(true);
+  try{
+    if(editing) await post("update", {row: editing.row, data});
+    else await post("add", {data});
+    closeModal(); toast("시트에 저장했어요 ✅");
+    busy = false; await load();
+  }catch(e){ alert("저장 실패: " + e.message); }
+  finally{ setBusy(false); }
+}
+
+async function quickStatus(row, value){
+  const r = ROWS.find(x => x.row === row); if(!r) return;
+  const data = {ready: value};
+  if(value === "완료" && !r.finRaw) data.fin = iso(today0());
+  setBusy(true);
+  try{ await post("update", {row, data}); toast("준비 여부를 바꿨어요"); busy=false; await load(); }
+  catch(e){ alert("변경 실패: " + e.message); renderTable(); }
+  finally{ setBusy(false); }
+}
+
+async function del(){
+  if(!editing || !confirm(`'${editing.name || editing.type}' 행의 내용을 비울까요? (행 서식은 유지돼요)`)) return;
+  setBusy(true);
+  try{ await post("delete", {row: editing.row}); closeModal(); toast("삭제했어요"); busy=false; await load(); }
+  catch(e){ alert("삭제 실패: " + e.message); }
+  finally{ setBusy(false); }
+}
+
+function setBusy(b){
+  busy = b;
+  ["saveBtn","delBtn","addBtn","refreshBtn"].forEach(id => $(id).disabled = b);
+  $("saveBtn").textContent = b ? "저장 중…" : "시트에 저장";
+}
+
+/* ---------- 렌더 ---------- */
+const data = () => $("showExample").checked ? ROWS : ROWS.filter(r => r.label !== "예시");
+
+function fillLists(){
+  const uniq = k => [...new Set(ROWS.map(r => r[k]).filter(Boolean))].sort();
+  const areas = [...new Set(ROWS.flatMap(r => r.area.split(",").map(s=>s.trim())).filter(Boolean))].sort();
+  $("typeList").innerHTML = uniq("type").map(v=>`<option value="${esc(v)}">`).join("");
+  $("ownerList").innerHTML = uniq("owner").map(v=>`<option value="${esc(v)}">`).join("");
+  $("areaList").innerHTML = areas.map(v=>`<option value="${esc(v)}">`).join("");
+  const sel = $("fType"), cur = sel.value, types = [...new Set(data().map(r=>r.type).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">구좌 구분 전체</option>` + types.map(t=>`<option>${esc(t)}</option>`).join("");
+  sel.value = types.includes(cur) ? cur : "";
+}
+
+function render(){ renderWeek(); renderTable(); }
+
+function renderWeek(){
+  const t0 = today0();
+  const mon = new Date(t0); mon.setDate(t0.getDate() - ((t0.getDay()+6)%7) + weekOffset*7);
+  const days = [...Array(7)].map((_,i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+  $("weekLabel").textContent = `${fmt(days[0])} ~ ${fmt(days[6])}`;
+  $("week").innerHTML = days.map(d => {
+    const evs = data().filter(r => r.date && r.date.getTime()===d.getTime());
+    return `<div class="day ${d.getTime()===t0.getTime()?"today":""}">
+      <div class="dh"><b>${d.getMonth()+1}/${d.getDate()} ${DOW[d.getDay()]}</b>
+        <span>${evs.length?evs.length+"건":""}${canWrite?` <button class="add" data-date="${iso(d)}" title="이 날짜에 추가">＋</button>`:""}</span></div>
+      ${evs.map(r=>`<div class="ev ${r.status}" data-row="${r.row ?? ""}" title="${esc(r.type)} · ${esc(r.name)} · ${ST_LABEL[r.status]}">${esc(r.type)}${r.name&&r.name!=="-"?" · "+esc(r.name):""}</div>`).join("")}
+    </div>`;
+  }).join("");
+}
+
+function linkify(label, v){
+  if(!v) return "";
+  return /^https?:\/\//i.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">${label}↗</a>`
+    : `<span title="${esc(v)}" style="font-size:12px;color:var(--muted);margin-right:6px">${label}</span>`;
+}
+
+function statusCell(r){
+  if(!canWrite || !r.row) return `<span class="badge ${r.status}">${ST_LABEL[r.status]}</span>`;
+  const opts = ["", "진행중", "완료"]; if(r.ready && !opts.includes(r.ready)) opts.push(r.ready);
+  return `<select class="st badge ${r.status}" data-row="${r.row}">${opts.map(o=>`<option value="${esc(o)}" ${o===r.ready?"selected":""}>${o?esc(o):"미입력"}</option>`).join("")}</select>`;
+}
+
+function renderTable(){
+  const q = $("q").value.trim().toLowerCase(), ft = $("fType").value, fs = $("fStatus").value;
+  let list = data().filter(r => (!ft || r.type===ft) && (!fs || r.status===fs) &&
+    (!q || [r.name,r.area,r.owner,r.type,r.note].join(" ").toLowerCase().includes(q)));
+  const val = r => ({date:r.date?.getTime() ?? Infinity, req:r.reqD?.getTime() ?? Infinity, fin:r.finD?.getTime() ?? Infinity,
+    status:{todo:0,prog:1,done:2}[r.status]})[sortKey] ?? (r[sortKey]||"");
+  list.sort((a,b) => { const x=val(a), y=val(b); return (x>y?1:x<y?-1:0) * (sortAsc?1:-1); });
+  $("tblCount").textContent = `${list.length}건`;
+  $("tbody").innerHTML = list.length ? list.map(r => `<tr>
+    <td class="nowrap">${r.date?fmt(r.date):esc(r.dateRaw)||"-"}</td>
+    <td class="nowrap">${esc(r.type)}</td>
+    <td>${esc(r.name)}</td>
+    <td>${esc(r.area)}</td>
+    <td class="nowrap">${r.reqD?fmt(r.reqD):esc(r.reqRaw)||"-"}</td>
+    <td class="nowrap">${r.finD?fmt(r.finD):esc(r.finRaw)||"-"}</td>
+    <td>${esc(r.owner)||"-"}</td>
+    <td>${statusCell(r)}</td>
+    <td class="links nowrap">${linkify("기획안",r.plan)}${linkify("완료",r.made)}${linkify("제작본",r.final)}</td>
+    <td>${esc(r.note)}</td>
+    <td>${canWrite && r.row ? `<button class="edit-btn" data-row="${r.row}">수정</button>` : ""}</td>
+  </tr>`).join("") : `<tr><td colspan="11" class="empty">조건에 맞는 구좌가 없어요</td></tr>`;
+}
+
+/* ---------- 유틸/이벤트 ---------- */
+function showErr(m){ $("err").textContent = m; $("err").style.display = "block"; }
+function showInfo(){
+  $("info").innerHTML = "지금은 <b>읽기 전용</b>이에요. Apps Script를 배포한 뒤 index.html의 <code>SCRIPT_URL</code>에 웹 앱 주소를 넣으면 여기서 바로 입력할 수 있어요.";
+  $("info").style.display = "block"; window.scrollTo({top:0,behavior:"smooth"});
+}
+let tt; function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2200); }
+const byRow = row => ROWS.find(r => String(r.row) === String(row));
+
+$("refreshBtn").onclick = load;
+$("addBtn").onclick = () => openModal(null);
+$("cancelBtn").onclick = closeModal;
+$("saveBtn").onclick = save;
+$("delBtn").onclick = del;
+$("modal").addEventListener("click", e => { if(e.target.id==="modal") closeModal(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeModal(); });
+$("showExample").onchange = () => { fillLists(); render(); };
+["q","fType","fStatus"].forEach(id => $(id).addEventListener("input", renderTable));
+$("prevW").onclick = () => { weekOffset--; renderWeek(); };
+$("nextW").onclick = () => { weekOffset++; renderWeek(); };
+$("thisW").onclick = () => { weekOffset=0; renderWeek(); };
+document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
+  const k = th.dataset.k; sortAsc = sortKey===k ? !sortAsc : true; sortKey = k; renderTable();
+});
+document.body.addEventListener("click", e => {
+  const add = e.target.closest(".add"); if(add){ openModal(null, parseDate(add.dataset.date)); return; }
+  const el = e.target.closest(".edit-btn, .ev");
+  if(el && el.dataset.row){ const r = byRow(el.dataset.row); if(r) openModal(r); }
+});
+$("tbody").addEventListener("change", e => {
+  if(e.target.matches("select.st")) quickStatus(Number(e.target.dataset.row), e.target.value);
+});
+$("themeBtn").onclick = () => {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+  try{ localStorage.setItem("theme", r.dataset.theme); }catch(e){}
+};
+try{ const t = localStorage.getItem("theme"); if(t) document.documentElement.dataset.theme = t; }catch(e){}
+
+load();
+if(AUTO_REFRESH_MIN > 0) setInterval(() => { if(!$("modal").classList.contains("open")) load(); }, AUTO_REFRESH_MIN*60*1000);
+</script>
+</body>
+</html>
